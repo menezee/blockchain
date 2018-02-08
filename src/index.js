@@ -16,20 +16,28 @@ const address = privateKeyWalletFormat.toAddress()
 const privateKeyWalletFormat2 = bitcore.PrivateKey.fromWIF('cNt91Lq76X2m9j1j8KAXNtLNRYrjW68bfRhHJvFYrLotQe89gmkQ')
 const address2 = privateKeyWalletFormat2.toAddress()
 
-console.log(`address`, address)
-console.log(`address2`, address2)
-
-let insight = new Insight('testnet')
-
+const insight = new Insight('testnet')
 
 insight.getUnspentUtxos(address, (err, utxos) => {
-    if (err){
+    if (err) {
         console.log(err)
     } else {
-        // const tx = bitcore.Transaction()
-        // tx.from(utxos)
-        // tx.to(address2, 10000)
-        // tx.serialize()
-        console.log(`utxos`, utxos)
+        const tx = new bitcore.Transaction()
+            .from(utxos) // Feed information about what unspent outputs one can use
+            .to(address2, 10000) // Add an output with the given amount of satoshis
+            .change(address) // Sets up a change address where the rest of the funds will go
+            .sign(privateKeyWalletFormat);
+
+        try {
+            insight.broadcast(tx, function(err, txID) {
+                if (err) {
+                    console.log(`error on broadcast`)
+                } else {
+                    console.log(`successful broadcast: `, txID)
+                }
+            })
+        } catch (e) {
+            console.log(`err`)
+        }
     }
 })
